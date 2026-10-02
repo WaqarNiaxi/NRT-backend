@@ -1,15 +1,19 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const Task = require("../models/task");
+
+const {
+  getTasks,
+  createTask,
+  updateTask,
+  deleteTask,
+} = require("../services/taskService");
 
 const router = express.Router();
 
-// task list 
+// Get task list
 router.get("/", async (req, res, next) => {
   try {
-    const tasks = await Task.find().sort({
-      createdAt: -1,
-    });
+    const tasks = await getTasks();
 
     res.status(200).json({
       success: true,
@@ -20,15 +24,14 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-// create task
+// Create task
 router.post("/", async (req, res, next) => {
   try {
     const { title } = req.body;
 
     if (
       !title ||
-      typeof title !== "string" ||
-      !title.trim()
+      typeof title !== "string"
     ) {
       return res.status(400).json({
         success: false,
@@ -36,9 +39,7 @@ router.post("/", async (req, res, next) => {
       });
     }
 
-    const task = await Task.create({
-      title: title.trim(),
-    });
+    const task = await createTask(title);
 
     res.status(201).json({
       success: true,
@@ -49,12 +50,11 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-// update task
+// Update task
 router.patch("/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
     const { completed } = req.body;
-
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(404).json({
@@ -70,15 +70,7 @@ router.patch("/:id", async (req, res, next) => {
       });
     }
 
-    const task = await Task.findByIdAndUpdate(
-      id,
-      { completed },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-
+    const task = await updateTask(id, completed);
 
     if (!task) {
       return res.status(404).json({
@@ -96,7 +88,7 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-// delete task
+// Delete task
 router.delete("/:id", async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -108,7 +100,7 @@ router.delete("/:id", async (req, res, next) => {
       });
     }
 
-    const task = await Task.findByIdAndDelete(id);
+    const task = await deleteTask(id);
 
     if (!task) {
       return res.status(404).json({
